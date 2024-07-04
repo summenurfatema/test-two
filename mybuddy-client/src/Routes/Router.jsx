@@ -24,6 +24,8 @@ import UserProfileEM from "../Pages/UserProfile/EditMode/UserProfileEM";
 import GeneralRequestSent from "../Pages/GeneralDashboard/GeneralRequest/GeneralRequestSent";
 import GeneralRequestRecieve from "../Pages/GeneralDashboard/GeneralRequest/GeneralRequestRecieve";
 import Academic from "../Pages/AcademicPage/Academic";
+import { element } from "prop-types";
+import Test from "../Pages/Test";
 
 
 
@@ -145,7 +147,10 @@ const router = createBrowserRouter([
         path: '/try',
         element: <Try/>
     },
- 
+ {
+    path:'/test',
+    element: <Test/>
+ }
 ]);
 
 
