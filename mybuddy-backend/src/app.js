@@ -9,8 +9,9 @@ const app = express();
 // app.use(cors());
 
 const corsOptions = {
-  origin: 'https://researchbdy.com/',
-  credentials:true
+  origin: 'https://researchbdy.com',
+  credentials: true,
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
