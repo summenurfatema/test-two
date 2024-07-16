@@ -63,24 +63,29 @@ const MemberSchema = new Schema(
     about: {
       type: String,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+    },
   },
   {
     timestamps: true,
   }
 );
-//check user exist
+//---------------- check user exist
 MemberSchema.methods.isMemberExist = async function (email) {
   const user = await Member.findOne(
     { email },
-    { _id: 1, email: 1, password: 1, role: 1 }
+    { _id: 1, email: 1, password: 1, role: 1,emailVerified:1 }
   );
   return user;
 };
 
-//pass match checking
-// MemberSchema.methods.isPasswordMatched = async function (givenPass, savedPass) {
-//   return await bcrypt.compare(givenPass, savedPass);
-// };
+//------------ pass match checking
+
 MemberSchema.methods.isPasswordMatched = async function (givenPass) {
   // Check if both givenPass and this.password are provided
   if (!givenPass || !this.password) {
@@ -91,7 +96,7 @@ MemberSchema.methods.isPasswordMatched = async function (givenPass) {
   return await bcrypt.compare(givenPass, this.password);
 };
 
-//hasing password
+//-------------- hasing password
 MemberSchema.pre("save", async function (next) {
   const user = this;
   if (user.password) {

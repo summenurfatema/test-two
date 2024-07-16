@@ -4,20 +4,19 @@ import httpStatus from "http-status";
 import router from "./app/routes/index.js";
 import {globalErrorHandler} from "./app/middlewars/gloalErrorHandler.js";
 
+
 const app = express();
+
+// const corsOptions = {
+//   origin: 'https://researchbdy.com/',
+//   credentials:true
+// };
+
+// app.use(cors(corsOptions));
 //
-// app.use(cors());
-
-const corsOptions = {
-  origin: 'https://researchbdy.com',
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
-
+app.use(cors());
 const bodyParserLimit = '100mb';
-//parser
+//parser 
 app.use(express.json({limit:bodyParserLimit}));
 app.use(express.urlencoded({extended: true,limit:bodyParserLimit}));
 
@@ -25,7 +24,7 @@ app.use(express.urlencoded({extended: true,limit:bodyParserLimit}));
 app.use("/api/v1", router); 
 //
 app.get("/", (req, res) => {
-  res.send("Server is Listening..");
+  res.send("Server is Listening...");
 });
 
 //global error handle

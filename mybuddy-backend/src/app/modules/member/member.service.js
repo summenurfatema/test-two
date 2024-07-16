@@ -1,16 +1,114 @@
 import httpStatus from "http-status";
 import {ApiError} from "../../../handleError/apiError.js";
 import {Member} from "./member.model.js";
+import crypto from 'crypto';
+import { sendEmail } from "../../../utils/emaillService.js";
 
 // create user / signUp user
+// export const createMemberService = async (userInfo) => {
+//   const result = (await Member.create(userInfo)).toObject();
+//   if (!result) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "Failed to create user");
+//   }
+//   const {password, ...newUser} = result;
+//   return newUser;
+// };
 export const createMemberService = async (userInfo) => {
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  userInfo.verificationToken = verificationToken;
+
   const result = (await Member.create(userInfo)).toObject();
   if (!result) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Failed to create user");
   }
-  const {password, ...newUser} = result;
+  const { password, ...newUser } = result;
+
+
+  const verificationUrl = `http://localhost:5173/verified-email/${verificationToken}`;
+
+  // Send verification email
+  await sendEmail({
+    to: newUser.email,
+    subject: 'Verify Your Email Address',
+    html: `
+     <div style="font-family: Arial, sans-serif;">
+      <img src="https://i.ibb.co/g9fcnQq/logo.png" alt="Research Buddy" style="width: 50px; height: auto;"/>
+      <p style="padding-top: 10px;">Dear ${newUser.name.firstName} ${newUser.name.lastName},</p>
+      <p>Thank you for signing up with us! We're excited to have you on board. To ensure the security and activation of your account, please verify your email address.</p>
+      <p>To get started, click the link below:</p>
+      <p><a className='font-semibold' href="${verificationUrl}">Verify Your Email</a></p>
+      <p>If you did not sign up for this account, please ignore this email.</p>
+      <p>Best regards,</p>
+      <p>The Research Buddy Team</p>
+      </div>
+    `,
+  });
+
   return newUser;
 };
+
+//------------ verify email
+
+export const verifyEmailService = async (token) => {
+  const user = await Member.findOne({ verificationToken: token });
+  if (!user) {
+    throw new Error('Invalid or expired verification token');
+  }
+
+  user.emailVerified = true;
+  user.verificationToken = undefined;
+  await user.save();
+
+  const userDetails = {
+    firstName: user.name.firstName,
+    lastName: user.name.lastName,
+    phoneNumber: user.phoneNumber,
+    email: user.email,
+  };
+
+  return userDetails;
+};
+
+// ----------- resent email
+export const resendEmailService = async (email) => {
+  const member = await Member.findOne({ email });
+
+  if (!member) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Member not found");
+  }
+
+  if (member.emailVerified === true) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email is already verified");
+  }
+
+  const verificationToken = member.verificationToken
+
+  //member.verificationToken = verificationToken;
+  await member.save();
+
+  const verificationLink =  `http://localhost:5173/verified-email/${verificationToken}`;
+  await sendEmail({
+    to: email,
+    subject: 'Verify Your Email Address',
+    html: `
+     <div style="font-family: Arial, sans-serif;">
+      <img src="https://i.ibb.co/g9fcnQq/logo.png" alt="Research Buddy" style="width: 50px; height: auto;"/>
+      <p style="padding-top: 10px;">Dear ${member.name.firstName} ${member.name.lastName},</p>
+      <p>Thank you for signing up with us! We're excited to have you on board. To ensure the security and activation of your account, please verify your email address.</p>
+      <p>To get started, click the link below:</p>
+      <p><a className='font-semibold' href="${verificationLink}">Verify Your Email</a></p>
+      <p>If you did not sign up for this account, please ignore this email.</p>
+      <p>Best regards,</p>
+      <p>The Research Buddy Team</p>
+      </div>
+    `,
+  });
+
+  return { message: 'Verification email sent' };
+};
+
+
+
 
 ///get all users
 export const getAllMemberService = async () => {
@@ -80,33 +178,6 @@ export const updateMemberCoverPicService = async (userId, data) => {
 };
 
 //--------------- update user info
-// export const updateMemberInfoService = async (userId, data) => {
-//   try {
-//     const member = await Member.findById(userId);
-//     if (!member) {
-//       throw new ApiError(httpStatus.NOT_FOUND, "Member not found");
-//     }
-//     const updatedMember = await Member.findByIdAndUpdate(
-//       userId,
-//       { $set: { firstName: data.name.firstName } },
-//       { $set: { lastName: data.name.lastName } },
-//       { $set: { role: data.role } },
-//       { $set: { about: data.about } },
-//       { $set: { phoneNumber: data.phoneNumber } },
-//       { $set: { address: data.address } },
-//       { $set: { country: data.country } },
-//       { new: true }
-//     );
-
-//     if (!updatedMember) {
-//       throw new ApiError(httpStatus.BAD_REQUEST, "Failed to update user information");
-//     }
-
-//     return updatedMember;
-//   } catch (error) {
-//     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
-//   }
-// };
 
 export const updateMemberInfoService = async (userId, data) => {
   try {
@@ -144,3 +215,4 @@ export const updateMemberInfoService = async (userId, data) => {
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
   }
 };
+
